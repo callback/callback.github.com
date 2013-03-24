@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>记对一次内存泄露的调试</title>
+   <link rel="shortcut icon" href="favicon.ico">
+   <meta name="author" content="wangaichao" />
+   <link href="http://feeds.feedburner.com/tom-preston-werner" rel="alternate" title="Tom Preston-Werner" type="application/atom+xml" />
+
+   <!-- syntax highlighting CSS -->
+   <link rel="stylesheet" href="/css/syntax.css" type="text/css" />
+
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/css/screen.css" type="text/css" media="screen, projection" />
+
+   <!-- Typekit -->
+   <script type="text/javascript" src="http://use.typekit.com/jpd0pfm.js"></script>
+   <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+</head>
+<body>
+
+<!-- ClickTale Top part -->
+<script type="text/javascript">
+var WRInitTime=(new Date()).getTime();
+</script>
+<!-- ClickTale end of Top part -->
+
+<div class="site">
+  <div class="title">
+    <a href="/">王爱超</a>
+    <a class="extra" href="/">home</a>
+  </div>
+  
+  <div id="post">
+<h2>记对一次内存泄露的调试</h2>
+
+<h3>1. 内存泄露的发现</h3>
+
+<blockquote><p>最开始发现内存泄露是程序在运行了两个多小时后就段错误然后down掉了。于是把程序编译了个debug版本，用gdb去跑，不到两个小时又down掉了。查看程序停下来的地方，发现是在对刚刚申请完的内存进行赋值时出了问题，打印一看，申请后的内存指针是空，应该是申请内存失败了，又没有加相应的判断。再去用top一看程序内存使用情况，占了70％多，而最开始的时候差不多只占用4％左右。看来是程序内有内存泄露了。</p></blockquote>
+
+<h3>2. 内存泄露的排查</h3>
+
+<blockquote><p>在开始进行内存泄露排查的时候，我直接就去看自己最怀疑的一个模块，结果在给这个可以  模块加入成对的内存使用记录之后，发现确实有内存对不上的地方，老是有好多内存没有           释放。接着就开始了混天暗地的读代码，测试代码阶段，搞了半天，突然发现在判断内存是否释放完成的时候有不准确的现象。虽然每次的输入都一样，但是每次不能匹配上的内存释放记录却不同。再回过头来看，发现是程序还没有运行完成早成了这个情况。于是再次回头解决如何界定程序运行完成的问题，在解决它的时候又发现了程序一个有关超时的bug，至此不匹配的内存释放发记录就稳定了。这时候内存泄露的排查已经过了两天了，自己觉得有点hold不住了，于是开始重新思考如何进行内存泄露的排查，找了张纸，列了下:</p>
+
+<blockquote><ul>
+<li>先梳理整个程序，程序不算太大，可以将每个使用内存的地方都列出来</li>
+<li>统一测试时的输入，保证每次测试的输入数据都相同</li>
+<li>分模块进行测试，从数据流开始的模块挨个进行排查</li>
+</ul>
+</blockquote>
+
+<p>之后变按照上面的顺序再次进行测试，发现自己忘记了程序中还有内存池这回事，于是件内存池临时去掉进行测试，最终找到了泄露的部分。而这个泄露的部分还不在最可疑的那个模块里面。oh，what a fucking day!</p></blockquote>
+
+<h3>3. 内存泄露的排查工具</h3>
+
+<blockquote><p>在做内存泄露排查的时候还用到了Valgrind这个内存检查软件，给自己帮了很大的忙
+<a href="http://www.cnblogs.com/napoleon_liu/articles/2001802.html">Valgrind的使用方式</a></p></blockquote>
+
+</div>
+
+<div id="related">
+  <h2>Related Posts</h2>
+  <ul class="posts">
+    
+  </ul>
+</div>
+
+  
+  <div class="footer">
+<!--
+    <div class="contact">
+      <p>
+        Tom Preston-Werner<br />
+        wangaichao_1988@163.com
+      </p>
+    </div>
+    <div class="contact">
+      <p>
+        < a href="http://github.com/mojombo/">github.com/supercode</a><br />
+        <a href="http://flickr.com/photos/mojombo/">flickr.com/photos/mojombo</a>
+      </p>
+    </div>
+    <div class="rss">
+      <a href="http://feeds.feedburner.com/tom-preston-werner">
+        <img src="/images/rss.png" alt="Subscribe to RSS Feed" />
+      </a>
+    </div>
+-->
+  </div>
+</div>
+
+
+<!-- ClickTale Bottom part -->
+<div id="ClickTaleDiv" style="display: none;"></div>
+<script type="text/javascript">
+if(document.location.protocol!='https:')
+  document.write(unescape("%3Cscript%20src='http://s.clicktale.net/WRb.js'%20type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+if(typeof ClickTale=='function') ClickTale(206,0.3,"www03");
+</script>
+<!-- ClickTale end of Bottom part -->
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6016902-1");
+pageTracker._trackPageview();
+</script>
+<!-- Google Analytics end -->
+
+</body>
+</html>

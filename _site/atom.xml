@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+ 
+ <title>Tom Preston-Werner</title>
+ <link href="http://tom.preston-werner.com/atom.xml" rel="self"/>
+ <link href="http://tom.preston-werner.com/"/>
+ <updated>2013-03-22T15:23:18+08:00</updated>
+ <id>http://tom.preston-werner.com/</id>
+ <author>
+   <name>Tom Preston-Werner</name>
+   <email>tom@mojombo.com</email>
+ </author>
+
+ 
+ <entry>
+   <title>记对一次内存泄露的调试</title>
+   <link href="http://tom.preston-werner.com/2013/03/20/memory-over.html"/>
+   <updated>2013-03-20T00:00:00+08:00</updated>
+   <id>http://tom.preston-werner.com/2013/03/20/memory-over</id>
+   <content type="html">&lt;h2&gt;记对一次内存泄露的调试&lt;/h2&gt;
+
+&lt;h3&gt;1. 内存泄露的发现&lt;/h3&gt;
+
+&lt;blockquote&gt;&lt;p&gt;最开始发现内存泄露是程序在运行了两个多小时后就段错误然后down掉了。于是把程序编译了个debug版本，用gdb去跑，不到两个小时又down掉了。查看程序停下来的地方，发现是在对刚刚申请完的内存进行赋值时出了问题，打印一看，申请后的内存指针是空，应该是申请内存失败了，又没有加相应的判断。再去用top一看程序内存使用情况，占了70％多，而最开始的时候差不多只占用4％左右。看来是程序内有内存泄露了。&lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;h3&gt;2. 内存泄露的排查&lt;/h3&gt;
+
+&lt;blockquote&gt;&lt;p&gt;在开始进行内存泄露排查的时候，我直接就去看自己最怀疑的一个模块，结果在给这个可以  模块加入成对的内存使用记录之后，发现确实有内存对不上的地方，老是有好多内存没有           释放。接着就开始了混天暗地的读代码，测试代码阶段，搞了半天，突然发现在判断内存是否释放完成的时候有不准确的现象。虽然每次的输入都一样，但是每次不能匹配上的内存释放记录却不同。再回过头来看，发现是程序还没有运行完成早成了这个情况。于是再次回头解决如何界定程序运行完成的问题，在解决它的时候又发现了程序一个有关超时的bug，至此不匹配的内存释放发记录就稳定了。这时候内存泄露的排查已经过了两天了，自己觉得有点hold不住了，于是开始重新思考如何进行内存泄露的排查，找了张纸，列了下:&lt;/p&gt;
+
+&lt;blockquote&gt;&lt;ul&gt;
+&lt;li&gt;先梳理整个程序，程序不算太大，可以将每个使用内存的地方都列出来&lt;/li&gt;
+&lt;li&gt;统一测试时的输入，保证每次测试的输入数据都相同&lt;/li&gt;
+&lt;li&gt;分模块进行测试，从数据流开始的模块挨个进行排查&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;之后变按照上面的顺序再次进行测试，发现自己忘记了程序中还有内存池这回事，于是件内存池临时去掉进行测试，最终找到了泄露的部分。而这个泄露的部分还不在最可疑的那个模块里面。oh，what a fucking day!&lt;/p&gt;&lt;/blockquote&gt;
+
+&lt;h3&gt;3. 内存泄露的排查工具&lt;/h3&gt;
+
+&lt;blockquote&gt;&lt;p&gt;在做内存泄露排查的时候还用到了Valgrind这个内存检查软件，给自己帮了很大的忙
+&lt;a href=&quot;http://www.cnblogs.com/napoleon_liu/articles/2001802.html&quot;&gt;Valgrind的使用方式&lt;/a&gt;&lt;/p&gt;&lt;/blockquote&gt;
+</content>
+ </entry>
+ 
+ 
+</feed>
